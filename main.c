@@ -4,22 +4,64 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include <windows.h>
 
 #define width 9
 #define height 9
 #define gridsize 81
 
+enum Entropy {zero, one, two, three, four, five, six, seven, eight, nine, mask};
+const uint16_t entropies[11] = { 
+    0b0000000000000000,
+    0b0000000000000001,
+    0b0000000000000010,
+    0b0000000000000100,
+    0b0000000000001000,
+    0b0000000000010000,
+    0b0000000000100000,
+    0b0000000001000000,
+    0b0000000010000000,
+    0b0000000100000000,
+    0b0000000111111111
+};
+
+static inline size_t get_entropy_count(uint16_t entropy) {
+    return entropy >> 9;
+}
+
+static inline size_t calculate_entropy_count(uint16_t entropy) {
+    uint16_t count = 0;
+    entropy &= entropies[mask];
+    while(entropy) {
+        count += (entropy & 1);
+        entropy >>= 1;
+    }
+    return count;
+}
+
+static inline void update_entropy_count(uint16_t *entropy) {
+    *entropy &= entropies[mask];  // remove previous count.
+    size_t count = calculate_entropy_count(*entropy);  // get current count.
+    *entropy |= (count << 10);  // set the new count.
+}
+
+
+static inline void update_entropy(uint16_t *old, uint16_t new) {
+    *old &= new;
+    update_entropy_count(old);
+}
+
 
 typedef struct Cell Cell;
 struct Cell {
-    uint8_t entropy;
+    uint16_t entropy;
     uint8_t value;
 };
 
 typedef struct Row Row;
 struct Row {
     Cell *ptr;
-    uint8_t potential[9];
+    uint16_t potential;
 };
 typedef struct Row Col;
 typedef struct Row Non;
@@ -35,9 +77,6 @@ typedef struct {
 int8_t collapse(Grid *grid);
 void initialize_grid(Grid *grid);
 void decrement_entropy(Grid *grid, size_t row, size_t col, size_t non);
-void print_values(const Grid *grid);
-void print_entropies(const Grid *grid);
-void print_potentials(const Grid *grid);
 
 int main(void) {
     srand((unsigned)time(NULL));
@@ -53,9 +92,8 @@ int main(void) {
     while (tries < max_tries) {
         while ((collapse(&grid)) != -1) {
             cells_filled++;
-            if (cells_filled == 86) {
+            if (cells_filled == gridsize) {
                 printf("Success!!\n");
-                print_values(&grid);
                 break;
             }
         }
@@ -65,19 +103,14 @@ int main(void) {
             local_max = cells_filled;
             printf("Tries: %zu\n", tries);
         }
-        initialize_grid(&grid);
-        cells_filled = 0;
         if (tries % 1000000 == 0) {
+            printf("Cells filled = %zu\n", cells_filled);
             printf("Tries: %zu\n", tries);
         }
+        initialize_grid(&grid);
+        cells_filled = 0;
     }
     printf("Tries: %zu\n", tries);
-
-    // print_values(&grid);
-    // printf("\n");
-    // print_entropies(&grid);
-    // printf("\n");
-    // print_potentials(&grid);
 
     return 0;
 }
@@ -89,14 +122,13 @@ int8_t collapse(Grid *grid) {
     };
     struct Pos choices[81];
     size_t count = 0;
-    // uint8_t max_entropy = 0;
-    uint8_t min_entropy = 9;
-    uint8_t current_entropy;
+    uint16_t min_entropy = entropies[mask];
+    uint16_t current_entropy;
     size_t i;
     for (i = 0; i < height; i++) {
         for (size_t j = 0; j < width; j++) {
             current_entropy = grid->cells[(i * width) + j].entropy;
-            if (current_entropy == 0) {
+            if (current_entropy == zero) {
                 continue;
             }
 
@@ -107,13 +139,6 @@ int8_t collapse(Grid *grid) {
             } else if (current_entropy == min_entropy) {
                 choices[count++] = (struct Pos) { .y = i, .x = j };
             }
-            // if (current_entropy > max_entropy) {
-            //     max_entropy = current_entropy;
-            //     count = 0;
-            //     choices[count++] = (struct Pos) { .y = i, .x = j };
-            // } else if (current_entropy == max_entropy) {
-            //     choices[count++] = (struct Pos) { .y = i, .x = j };
-            // }
         }
     }
 
@@ -124,40 +149,77 @@ int8_t collapse(Grid *grid) {
     size_t r = rand() % count;
     struct Pos choice = choices[r];
     Cell *collapsing = &grid->cells[(choice.y * width) + choice.x];
-    collapsing->entropy = 0;
 
-    // Get the intersection of the potential values from the row/column/nondrant
-    // that corresponds to the position in the grid that the chosen cell is
-    // located at. If there are no nonzero values, as indicated by count, then
-    // we've hit a dead end.
-    // Packt the values in the front of the array and keep the count to reduce
-    // misses when choosing a value for the cell to collapse to.
-    uint8_t remaining_potential[9];
+    // I need to get the values that the cell could be and choose a random one
+    // set the value of the cell to that value,
+    // then update the affected cells to reflect the lowered entropy and
+    // remove that value from their sets.
+
+
+    // intersect the row/col/non to determine possible values
     size_t nondrant = ((choice.y / 3) * 3) + (choice.x / 3);
-    count = 0;
-    for (i = 0; i < 9; i++) {
-        r = grid->rows[choice.y].potential[i] &
-            grid->cols[choice.x].potential[i] &
-            grid->nons[nondrant].potential[i];
-        if (r == 0) {
-            continue;
-        } else {
-            remaining_potential[count++] = r;
-        }
-    }
-    if (count == 0) {
+    uint16_t possibilities = grid->rows[choice.y].potential &
+                             grid->cols[choice.x].potential &
+                             grid->nons[nondrant].potential;
+
+    count = get_entropy_count(possibilities);
+    if (count < 1 || count > 9) {  // we hate both of these
+        fprintf(stderr, "Entropy count is bad\n");
+        Sleep(1000);
         return -1;
     }
+    uint8_t potentials[count];
+    // This loops through the potential values in possibilities and then maps
+    // the natural number to potentials in reverse order.
+    for (uint8_t i = 1; i <= 9; i++) {
+        if ((possibilities & entropies[i]) == entropies[i]) {
+            potentials[count - i] = i;
+        }
+    }
 
+    // Now we can choose the value for the collapsing cell
     r = rand() % count;
-    collapsing->value = remaining_potential[r];
+    collapsing->value = potentials[r];
 
-    // Update the potential arrays to reflect the collapsed value
-    grid->rows[choice.y].potential[collapsing->value - 1] = 0;
-    grid->cols[choice.x].potential[collapsing->value - 1] = 0;
-    grid->nons[nondrant].potential[collapsing->value - 1] = 0;
+    // Now we need to update the entropy to reflect the value of the collapsed
+    // cell. Maybe break this into a function for looks.
+    uint16_t entropy_to_remove;
+    switch (r) {
+        case 1:
+            entropy_to_remove = one;
+            break;
+        case 2:
+            entropy_to_remove = two;
+            break;
+        case 3:
+            entropy_to_remove = three;
+            break;
+        case 4:
+            entropy_to_remove = four;
+            break;
+        case 5:
+            entropy_to_remove = five;
+            break;
+        case 6:
+            entropy_to_remove = six;
+            break;
+        case 7:
+            entropy_to_remove = seven;
+            break;
+        case 8:
+            entropy_to_remove = eight;
+            break;
+        case 9:
+            entropy_to_remove = nine;
+            break;
+    }
 
-    decrement_entropy(grid, choice.y, choice.x, nondrant);
+    uint16_t new_entropy = possibilities & ~entropy_to_remove;
+
+    // Update the entropies
+    update_entropy(&grid->rows[choice.y].potential, new_entropy);
+    update_entropy(&grid->cols[choice.x].potential, new_entropy);
+    update_entropy(&grid->nons[nondrant].potential, new_entropy);
 
     return collapsing->value;
 }
@@ -167,23 +229,29 @@ void initialize_grid(Grid *grid) {
     size_t i, j;
 
     for (i = 0; i < width; i++) {
-        grid->rows[i] = (Row){ .ptr = grid->cells + i,
-            .potential = {1, 2, 3, 4, 5, 6, 7, 8, 9} };
+        grid->rows[i] = (Row){ .ptr = grid->cells + (i * width),
+            .potential = entropies[mask] };
         grid->cols[i] = (Col){ .ptr = grid->cells + i,
-            .potential = {1, 2, 3, 4, 5, 6, 7, 8, 9} };
+            .potential = entropies[mask] };
+
+        update_entropy_count(&(grid->rows[i].potential));
+        update_entropy_count(&(grid->cols[i].potential));
     }
 
     size_t count = 0;
     for (i = 1; i < height; i += 3) {
         for (j = 1; j < width; j += 3) {
             grid->nons[count] = (Non){ .ptr = grid->cells + (i * width) + j,
-                .potential = {1, 2, 3, 4, 5, 6, 7, 8, 9} };
+                .potential = entropies[mask] };
             count++;
         }
+        update_entropy_count(&(grid->nons[count].potential));
     }
 
+    uint16_t cell_entropy = entropies[mask];
+    update_entropy_count(&cell_entropy);
     for (i = 0; i < gridsize; i++) {
-        grid->cells[i] = (Cell){ .entropy = 9, .value = 0 };
+        grid->cells[i] = (Cell){ .entropy = cell_entropy, .value = 0 };
     }
 }
 
@@ -207,54 +275,5 @@ void decrement_entropy(Grid *grid, size_t y, size_t x, size_t n) {
                 non_start[(i * width) + j].entropy -= 1;
             }
         }
-    }
-}
-
-void print_values(const Grid *grid) {
-    printf("Values:\n");
-    for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
-            printf("%d ", grid->cells[(i * width) + j].value);
-        }
-        printf("\n");
-    }
-}
-
-void print_entropies(const Grid *grid) {
-    printf("Entropies:\n");
-    for (size_t i = 0; i < height; i++) {
-        for (size_t j = 0; j < width; j++) {
-            printf("%d ", grid->cells[(i * width) + j].entropy);
-        }
-        printf("\n");
-    }
-}
-
-void print_potentials(const Grid *grid) {
-    printf("Rows:\n");
-    for (size_t i = 0; i < width; i++) {
-        printf("Row %zu: ", i + 1);
-        for (size_t j = 0; j < width; j++) {
-            printf("%d ", grid->rows[i].potential[j]);
-        }
-        printf("\n");
-    }
-
-    printf("Cols:\n");
-    for (size_t i = 0; i < width; i++) {
-        printf("Col %zu: ", i + 1);
-        for (size_t j = 0; j < width; j++) {
-            printf("%d ", grid->cols[i].potential[j]);
-        }
-        printf("\n");
-    }
-
-    printf("Nons:\n");
-    for (size_t i = 0; i < width; i++) {
-        printf("Non %zu: ", i + 1);
-        for (size_t j = 0; j < width; j++) {
-            printf("%d ", grid->nons[i].potential[j]);
-        }
-        printf("\n");
     }
 }
