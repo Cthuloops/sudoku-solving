@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include "cell.h"
+#include "../include/cell.h"
 
 const uint16_t entropies[11] = {
     0b0000000000000000,

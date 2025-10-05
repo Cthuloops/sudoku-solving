@@ -10,6 +10,9 @@
 #define INCLUDE_GRID_H_
 
 #include <stdint.h>
+#include <stddef.h>
+
+#include "./cell.h"
 
 
 #define grid_width 9
@@ -49,6 +52,20 @@ void initialize_grid(struct Grid *grid);
  * starting value.
  */
 void grid_reset_cells(struct Grid *grid);
+
+/**
+ * @brief Propagate_entropy propagates entropy to the affected cells.
+ *
+ * @details A collapsing cell affects the 24 cells that are located in the same
+ *          row, column, and nondrant. This function updates those cells to
+ *          reflect the collapsed cells value.
+ *
+ *  @param grid The grid in which the cell resides.
+ *  @param y The row that the cell is in.
+ *  @param x The column that the cell is in.
+ */
+void propagate_entropy(struct Grid *grid, size_t y, size_t x,
+                       enum Entropy entropy);
 
 
 #endif  // INCLUDE_GRID_H_

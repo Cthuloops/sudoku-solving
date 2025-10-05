@@ -8,8 +8,8 @@
 
 #include <stdio.h>
 
-#include "grid.h"
-#include "cell.h"
+#include "../include/grid.h"
+#include "../include/cell.h"
 
 int main(void) {
 

@@ -8,8 +8,8 @@
 
 #include <stddef.h>
 
-#include "grid.h"
-#include "cell.h"
+#include "../include/grid.h"
+#include "../include/cell.h"
 
 void initialize_grid(struct Grid *grid) {
     size_t i, j;
@@ -41,5 +41,54 @@ void grid_reset_cells(struct Grid *grid) {
     // existing cells, but unless there's a real need, meh.
     for (size_t i = 0; i < grid_size; i++) {
         grid->cells[i] = get_initialized_cell();
+    }
+}
+
+void propagate_entropy(struct Grid *grid, size_t y, size_t x,
+                       enum Entropy entropy) {
+    if (grid == NULL) {
+        return;  // I need to add more consistent error handling.
+    }
+    if (y >= 9 || x >= 9) {
+        return;
+    }
+
+    // Get a pointer to the row/col.
+    uint16_t *row = grid->rows[y];
+    uint16_t *col = grid->cols[x];
+    if (row == NULL || col == NULL) {
+        return;
+    }
+
+    // Get a point to the middle element of the nondrant.
+    size_t nondrant = ((y / 3) * 3) + (x / 3);
+    uint16_t *non = grid->nons[nondrant];
+    if (non == NULL || nondrant >= 9) {
+        return;
+    }
+
+    // Remove the entropy from each cell except the collapsed cell.
+    size_t i;
+    for (i = 0; i < grid_width; i++) {
+        if (i == x) {
+            continue;
+        }
+        remove_entropy_value(row + i, entropy);
+    }
+
+    for (i = 0; i < grid_height; i++) {
+        if (i == y) {
+            continue;
+        }
+        remove_entropy_value((col + (i * grid_width)), entropy);
+    }
+
+    for (int8_t i = -1; i <= 1; i++) {
+        for (int8_t j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0) {
+                continue;
+            }
+            remove_entropy_value((non + ((i * grid_width) + j)), entropy);
+        }
     }
 }
