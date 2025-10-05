@@ -6,11 +6,12 @@
  * @license MIT
  */
 
-#ifndef CELL_ENTROPY_H_
-#define CELL_ENTROPY_H_
+#ifndef CELL_H_
+#define CELL_H_
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 enum Entropy {zero, one, two, three, four, five, six, seven, eight, nine, all};
 const uint16_t entropies[11] = {
@@ -83,8 +84,8 @@ static inline void remove_entropy_value(uint16_t *cell, enum Entropy value) {
 }
 
 /**
- * @brief Get initialized cell (all possible values + count)
- * @returns uint16_t
+ * @brief Get initialized cell (all possible values + count).
+ * @returns A initialized cell.
  */
 static inline uint16_t get_initialized_cell(void) {
     uint16_t cell = entropies[all];
@@ -92,4 +93,35 @@ static inline uint16_t get_initialized_cell(void) {
     return cell;
 }
 
-#endif  // CELL_ENTROPY_H_
+
+/**
+ * @brief Is_valid_entropy checks whether an entropy is present in a cell.
+ * @returns true if present, false otherwise.
+ */
+static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy) {
+    return cell & entropies[entropy];
+}
+
+
+/**
+ * @brief Collapse collapses a cell to a set value and sets it's count to 0.
+ * @param cell Pointer to the cell to collapse.
+ * @param entropy The entropy state to set (zero through nine)
+ * @returns The numeric value (1-9) corresponding to the entropy.
+ *          INT8_MAX if value is 'all' (invalid input).
+ *          -1 if the value is not a valid entropy for the cell.
+ */
+static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
+    if (entropy == all) {
+        return INT8_MAX;
+    }
+
+    if (!is_valid_entropy(*cell, entropy)) {
+        return -1;
+    }
+
+    *cell = entropies[entropy];
+    return (int8_t)entropy;
+}
+
+#endif  // CELL_H_
