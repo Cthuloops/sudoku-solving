@@ -83,9 +83,13 @@ void propagate_entropy(struct Grid *grid, size_t y, size_t x,
         remove_entropy_value((col + (i * grid_width)), entropy);
     }
 
+    // Gotta get the relative position of the collapsed cell to the center of
+    // it's nondrant
+    int8_t rel_pos_y = (y % 3) - 1;
+    int8_t rel_pos_x = (x % 3) - 1;
     for (int8_t i = -1; i <= 1; i++) {
         for (int8_t j = -1; j <= 1; j++) {
-            if (i == 0 && j == 0) {
+            if (i == rel_pos_y && j == rel_pos_x) {
                 continue;
             }
             remove_entropy_value((non + ((i * grid_width) + j)), entropy);
