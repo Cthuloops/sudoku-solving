@@ -56,3 +56,6 @@ dkms.conf
 
 # git worktree
 wt_*/
+
+# build files
+.build/
