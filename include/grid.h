@@ -42,7 +42,7 @@ struct Grid {
 * @details Sets up all of the pointers to the rows/cols/nons and initializes
 * the cells in the cell array to their default starting value.
 */
-void intialize(struct Grid *grid);
+void initialize_grid(struct Grid *grid);
 
 /**
  * @brief Grid_reset_cells resets the cells in the grid to their default

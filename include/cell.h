@@ -14,19 +14,7 @@
 #include <stdbool.h>
 
 enum Entropy {zero, one, two, three, four, five, six, seven, eight, nine, all};
-const uint16_t entropies[11] = {
-    0b0000000000000000,
-    0b0000000000000001,
-    0b0000000000000010,
-    0b0000000000000100,
-    0b0000000000001000,
-    0b0000000000010000,
-    0b0000000000100000,
-    0b0000000001000000,
-    0b0000000010000000,
-    0b0000000100000000,
-    0b0000000111111111
-};
+extern const uint16_t entropies[11];
 #define entropy_count_mask 0b0001111000000000
 
 /**
