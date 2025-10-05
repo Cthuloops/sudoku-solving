@@ -1,4 +1,11 @@
-// copyright
+/**
+ * @file cell_entropy.h
+ * @brief Sudoku cell entropy management using bit manipulation.
+ * @author Harley Coughlin
+ * @copyright Copyright (c) 2025 Harley Coughlin
+ * @license MIT
+ */
+
 #ifndef CELL_ENTROPY_H_
 #define CELL_ENTROPY_H_
 
