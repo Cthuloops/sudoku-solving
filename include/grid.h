@@ -64,8 +64,8 @@ void grid_reset_cells(struct Grid *grid);
  *  @param y The row that the cell is in.
  *  @param x The column that the cell is in.
  */
-void propagate_entropy(struct Grid *grid, size_t y, size_t x,
-                       enum Entropy entropy);
+void propagate_collapse(struct Grid *grid, size_t y, size_t x,
+                        enum Entropy entropy);
 
 
 #endif  // INCLUDE_GRID_H_

@@ -44,8 +44,8 @@ void grid_reset_cells(struct Grid *grid) {
     }
 }
 
-void propagate_entropy(struct Grid *grid, size_t y, size_t x,
-                       enum Entropy entropy) {
+void propagate_collapse(struct Grid *grid, size_t y, size_t x,
+                        enum Entropy entropy) {
     if (grid == NULL) {
         return;  // I need to add more consistent error handling.
     }
