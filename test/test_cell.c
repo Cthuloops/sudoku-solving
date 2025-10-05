@@ -2,6 +2,7 @@
 #include <criterion/new/assert.h>
 #include "../include/cell.h"
 
+///////////////////////////////////////////////////
 TestSuite(EntropyInitializedCell);
 Test(EntropyInitializedCell, test_cell_is_initialized) {
     uint16_t cell = get_initialized_cell();

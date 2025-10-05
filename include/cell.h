@@ -13,8 +13,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define enum_entropy_size 11
 enum Entropy {zero, one, two, three, four, five, six, seven, eight, nine, all};
-extern const uint16_t entropies[11];
+extern const uint16_t entropy_masks[enum_entropy_size];
+extern const enum Entropy entropies[enum_entropy_size];
 #define entropy_count_mask 0b0001111000000000
 
 /**
@@ -29,16 +31,17 @@ static inline size_t get_entropy_count(uint16_t cell) {
 /**
  * @brief Count the number of bits set within the last 9 bits of the cell.
  * @param cell The cell to count bits.
- * @returns The amount of bits counted.
+ * @returns The amount of bits counted - 1.
  */
 static inline size_t calculate_entropy_count(uint16_t cell) {
     size_t count = 0;
-    cell &= entropies[all];  // Wipe the flags except available entropy values.
+    // Wipe the flags except available entropy values.
+    cell &= entropy_masks[all];
     while (cell != 0) {
         count += (cell & 1);  // See if the least significant bit is set.
         cell >>= 1;  // Shift the pattern down 1.
     }
-    return count;
+    return count - 1;
 }
 
 /**
@@ -50,7 +53,7 @@ static inline void recalculate_entropy_count(uint16_t *cell) {
     if (cell == NULL) {
         return;
     }
-    *cell &= entropies[all];
+    *cell &= entropy_masks[all];
     size_t count = calculate_entropy_count(*cell);
     *cell |= (count << 9);
 }
@@ -67,7 +70,7 @@ static inline void remove_entropy_value(uint16_t *cell, enum Entropy value) {
         return;  // Maybe error at some point, just ignore for now.
     }
 
-    *cell &= ~entropies[value];
+    *cell &= ~entropy_masks[value];
     recalculate_entropy_count(cell);
 }
 
@@ -76,7 +79,7 @@ static inline void remove_entropy_value(uint16_t *cell, enum Entropy value) {
  * @returns A initialized cell.
  */
 static inline uint16_t get_initialized_cell(void) {
-    uint16_t cell = entropies[all];
+    uint16_t cell = entropy_masks[all];
     recalculate_entropy_count(&cell);
     return cell;
 }
@@ -87,7 +90,7 @@ static inline uint16_t get_initialized_cell(void) {
  * @returns true if present, false otherwise.
  */
 static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy) {
-    return cell & entropies[entropy];
+    return cell & entropy_masks[entropy];
 }
 
 
@@ -108,8 +111,10 @@ static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
         return -1;
     }
 
-    *cell = entropies[entropy];
+    *cell = entropy_masks[entropy];
     return (int8_t)entropy;
 }
+
+uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]);
 
 #endif  // INCLUDE_CELL_H_

@@ -10,7 +10,11 @@
 
 #include "../include/cell.h"
 
-const uint16_t entropies[11] = {
+const enum Entropy entropies[enum_entropy_size] = {
+    zero, one, two, three, four, five, six, seven, eight, nine, all
+};
+
+const uint16_t entropy_masks[enum_entropy_size] = {
     0b0000000000000000,
     0b0000000000000001,
     0b0000000000000010,
@@ -23,3 +27,18 @@ const uint16_t entropies[11] = {
     0b0000000100000000,
     0b0000000111111111
 };
+
+uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]) {
+    if (cell == NULL || buf == NULL) {
+        return 0;
+    }
+
+    size_t count = 0;
+    for (size_t i = 0; i < 11; i++) {
+        if (is_valid_entropy(*cell, entropies[i])) {
+            buf[count++] = entropies[i];
+        }
+    }
+
+    return count;
+}
