@@ -6,8 +6,8 @@
  * @license MIT
  */
 
-#ifndef CELL_H_
-#define CELL_H_
+#ifndef INCLUDE_CELL_H_
+#define INCLUDE_CELL_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -112,4 +112,4 @@ static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
     return (int8_t)entropy;
 }
 
-#endif  // CELL_H_
+#endif  // INCLUDE_CELL_H_

@@ -6,8 +6,8 @@
  * @license MIT
  */
 
-#ifndef GRID_H_
-#define GRID_H_
+#ifndef INCLUDE_GRID_H_
+#define INCLUDE_GRID_H_
 
 #include <stdint.h>
 
@@ -51,4 +51,4 @@ void initialize_grid(struct Grid *grid);
 void grid_reset_cells(struct Grid *grid);
 
 
-#endif  // GRID_H_
+#endif  // INCLUDE_GRID_H_
