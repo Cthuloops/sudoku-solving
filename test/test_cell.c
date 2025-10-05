@@ -1,6 +1,6 @@
 #include <criterion/criterion.h>
 #include <criterion/new/assert.h>
-#include "cell_entropy.h"
+#include "../include/cell.h"
 
 TestSuite(EntropyInitializedCell);
 Test(EntropyInitializedCell, test_cell_is_initialized) {
