@@ -19,6 +19,20 @@ extern const uint16_t entropy_masks[enum_entropy_size];
 extern const enum Entropy entropies[enum_entropy_size];
 #define entropy_count_mask 0b0001111000000000
 
+static inline size_t get_entropy_count(uint16_t cell);
+static inline size_t calculate_entropy_count(uint16_t cell);
+static inline void recalculate_entropy_count(uint16_t *cell);
+static inline void remove_entropy_value(uint16_t *cell, enum Entropy value);
+static inline uint16_t get_initialized_cell(void);
+static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy);
+static inline int8_t collapse(uint16_t *cell, enum Entropy entropy);
+
+/**
+ * @brief Get_entropy_values places the available values for a cell in a buffer.
+ * @returns The count of elements placed within the buffer.
+ */
+uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]);
+
 /**
  * @brief Get the count of entropy for the cell.
  * @returns The count of entropy.
@@ -70,8 +84,10 @@ static inline void remove_entropy_value(uint16_t *cell, enum Entropy value) {
         return;  // Maybe error at some point, just ignore for now.
     }
 
-    *cell &= ~entropy_masks[value];
-    recalculate_entropy_count(cell);
+    if (is_valid_entropy(*cell, value)) {
+        *cell &= ~entropy_masks[value];
+        recalculate_entropy_count(cell);
+    }
 }
 
 /**
@@ -114,7 +130,5 @@ static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
     *cell = entropy_masks[entropy];
     return (int8_t)entropy;
 }
-
-uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]);
 
 #endif  // INCLUDE_CELL_H_
