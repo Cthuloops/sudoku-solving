@@ -34,7 +34,7 @@ uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]) {
     }
 
     size_t count = 0;
-    for (size_t i = 0; i < enum_entropy_size; i++) {
+    for (size_t i = 1; i < enum_entropy_size - 1; i++) {
         if (is_valid_entropy(*cell, entropies[i])) {
             buf[count++] = entropies[i];
         }

@@ -25,7 +25,7 @@ int main(void) {
     size_t cells_filled = 0;
     size_t local_max = 0;
     size_t tries = 0;
-    const size_t max_tries = 1;
+    const size_t max_tries = 10000000;
     while (tries < max_tries) {
         while (collapse_and_propagate(&grid) != -1) {
             cells_filled++;
@@ -42,8 +42,11 @@ int main(void) {
         }
         grid_reset_cells(&grid);
         cells_filled = 0;
-        printf("Tries: %zu\n", tries);
+        if (tries % 100000 == 0) {
+            printf("Tries: %zu\n", tries);
+        }
     }
+    printf("Tries: %zu\n", tries);
 
     return 0;
 }
@@ -53,7 +56,12 @@ void print_grid(struct Grid *grid) {
         if (i % 9 == 0 && i > 0) {
             printf("\n");
         }
-        printf("%zu ", get_entropy_count(grid->cells[i]));
+        for (int j = 0; j < enum_entropy_size; j++) {
+            if (is_valid_entropy(grid->cells[i], entropies[j])) {
+                printf("%3d ", j);
+                break;
+            }
+        }
     }
     printf("\n");
 }
@@ -79,7 +87,8 @@ int8_t collapse_and_propagate(struct Grid *grid) {
     for (size_t i = 0; i < grid_size; i++) {
         current_entropy_count = get_entropy_count(grid->cells[i]);
         // We don't want to consider cells that are already collapsed.
-        if (current_entropy_count < min_entropy_count && current_entropy_count > 1) {
+        if (current_entropy_count < min_entropy_count &&
+            current_entropy_count > 1) {
             min_entropy_count = current_entropy_count;
             count = 0;
             min_entropy_cells[count++] = (struct Pos){ .y = i / 9, .x = i % 9 };
@@ -101,6 +110,11 @@ int8_t collapse_and_propagate(struct Grid *grid) {
     uint8_t amount_available = get_entropy_values(collapsing_cell,
                                                   available_values);
 
+    // printf("Cell (%zu, %zu) available values: ", choice.y, choice.x);
+    // for (size_t i = 0; i < amount_available; i++) {
+    //     printf("%d, ", available_values[i]);
+    // }
+    // printf("\n");
     // TODO(Cthuloops): Another good candidate for real logging.
     if (amount_available == 0) {
         fprintf(stderr, "Something went wrong, expected cell %zu, %zu to have "
@@ -111,7 +125,7 @@ int8_t collapse_and_propagate(struct Grid *grid) {
     r = rand() % amount_available;
     // TODO(Cthuloops): Reconsider this api. Do I need the returned value
     //                  if I have available_values[r]?
-    printf("Collapsing cell: %zu, %zu\n", choice.y, choice.x);
+    // printf("Collapsing cell: %zu, %zu\n", choice.y, choice.x);
     uint8_t collapsed_value = collapse(collapsing_cell, available_values[r]);
     // Should I pass the return value or the available_values[r]?
     propagate_collapse(grid, choice.y, choice.x, entropies[collapsed_value]);
