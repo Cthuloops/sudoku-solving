@@ -88,3 +88,64 @@ Test(EntropyRemove, test_remove_all_values_iterative) {
         cr_assert(not(cell & entropies[values[i]]));
     }
 }
+
+/////////////////////////////////////////////////////
+TestSuite(Collapse);
+Test(Collapse, test_collapse_cell_to_one) {
+    uint16_t cell = get_initialized_cell();
+    int8_t val = collapse(&cell, one);
+    // Test the cell acquired the collapsed bit flag.
+    cr_assert(is_collapsed(cell));
+    // Test the cell is value 1 with the collapsed bit flag masked out.
+    cr_assert(eq(u16, (cell & entropy_masks[all]), entropy_masks[one]));
+    // Test return value is 1
+    cr_assert(eq(i8, val, 1));
+}
+
+Test(Collapse, test_collapse_cell_to_three) {
+    uint16_t cell = get_initialized_cell();
+    int8_t val = collapse(&cell, three);
+    // Test the cell acquired the collapsed bit flag.
+    cr_assert(is_collapsed(cell));
+    // Test the cell is value 3 with the collapsed bit flag masked out.
+    cr_assert(eq(u16, (cell & entropy_masks[all]), entropy_masks[three]));
+    // Test return value is 3
+    cr_assert(eq(i8, val, 3));
+}
+
+Test(Collapse, test_collapse_cell_to_nine) {
+    uint16_t cell = get_initialized_cell();
+    int8_t val = collapse(&cell, nine);
+    // Test the cell acquired the collapsed bit flag.
+    cr_assert(is_collapsed(cell));
+    // Test the cell is value 9 with the collapsed bit flag masked out.
+    cr_assert(eq(u16, (cell & entropy_masks[all]), entropy_masks[nine]));
+    // Test the return value is 9.
+    cr_assert(eq(i8, val, 9));
+}
+
+Test(Collapse, test_collapse_cell_to_all) {
+    uint16_t cell = get_initialized_cell();
+    int8_t val = collapse(&cell, all);
+    // Test the cell is not collapsed
+    cr_assert(not(is_collapsed(cell)));
+    // Test the cell is 'all'.
+    cr_assert(eq(u16, cell, entropy_masks[all]));
+    // Test the return value is INT8_MAX.
+    cr_assert(eq(i8, val, INT8_MAX));
+}
+
+Test(Collapse, test_collapse_cell_to_invalid) {
+    uint16_t cell = entropy_masks[two];
+    int8_t val = collapse(&cell, one);
+    cr_assert(not(is_collapsed(cell)));
+    cr_assert(eq(u16, cell, entropy_masks[two]));
+    cr_assert(eq(i8, val, -1));
+}
+
+Test(Collapse, test_collapse_null_cell) {
+    uint16_t *cell = NULL;
+    int8_t val = collapse(cell, one);
+    cr_assert(eq(i8, val, 0));
+    cr_assert(eq(ptr, cell, NULL));
+}

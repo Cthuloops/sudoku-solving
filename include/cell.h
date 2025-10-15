@@ -20,11 +20,14 @@ extern const enum Entropy entropies[enum_entropy_size];
 #define entropy_lookup_amount 512
 extern uint8_t entropy_lookup[entropy_lookup_amount];
 
-void initialize_entropy_lookup(void);
+#define collapsed 1024
+
+uint8_t get_entropy_values(uint16_t *cell, enum Entropy buf[]);
 static inline size_t get_entropy_count(uint16_t cell);
 static inline void remove_entropy_value(uint16_t *cell, enum Entropy value);
 static inline uint16_t get_initialized_cell(void);
 static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy);
+static inline bool is_collapsed(uint16_t cell);
 static inline int8_t collapse(uint16_t *cell, enum Entropy entropy);
 
 /**
@@ -78,6 +81,13 @@ static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy) {
     return (bool)(cell & entropy_masks[entropy]);
 }
 
+/**
+ * @brief Is_collapsed checks whether the collapsed flag is set.
+ * @returns true if present, false otherwise.
+ */
+static inline bool is_collapsed(uint16_t cell) {
+    return (bool)(cell & collapsed);
+}
 
 /**
  * @brief Collapse collapses a cell to a set value.
@@ -86,8 +96,13 @@ static inline bool is_valid_entropy(uint16_t cell, enum Entropy entropy) {
  * @returns The numeric value (1-9) corresponding to the entropy.
  *          INT8_MAX if value is 'all' (invalid input).
  *          -1 if the value is not a valid entropy for the cell.
+ *  @note If cell == NULL, do nothing return 0.
  */
 static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
+    if (cell == NULL) {
+        return 0;
+    }
+
     if (entropy == all) {
         return INT8_MAX;
     }
@@ -96,7 +111,7 @@ static inline int8_t collapse(uint16_t *cell, enum Entropy entropy) {
         return -1;
     }
 
-    *cell = entropy_masks[entropy];
+    *cell = entropy_masks[entropy] | collapsed;
     return (int8_t)entropy;
 }
 
