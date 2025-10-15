@@ -68,7 +68,7 @@ static inline void remove_entropy_value(uint16_t *cell, enum Entropy value) {
  * @returns A initialized cell.
  */
 static inline uint16_t get_initialized_cell(void) {
-    return (uint16_t)entropy_masks[all];
+    return entropy_masks[all];
 }
 
 
