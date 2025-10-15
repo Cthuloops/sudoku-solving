@@ -57,7 +57,7 @@ Test(EntropyRemove, test_remove_value_1) {
     remove_entropy_value(&cell, one);
     size_t count = get_entropy_count(cell);
     cr_assert(eq(ulong, count, 8));
-    cr_assert(not(cell & entropies[one]));
+    cr_assert(not(cell & entropy_masks[one]));
 }
 
 Test(EntropyRemove, test_remove_value_5) {
