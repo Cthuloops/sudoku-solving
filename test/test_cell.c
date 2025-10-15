@@ -6,7 +6,7 @@
 TestSuite(EntropyInitializedCell);
 Test(EntropyInitializedCell, test_cell_is_initialized) {
     uint16_t cell = get_initialized_cell();
-    cr_assert(eq(cell, (entropies[all] | (9 << 9))));
+    cr_assert(eq(u16, cell, entropy_masks[all]));
 }
 
 //////////////////////////////////////////////////
@@ -14,43 +14,27 @@ TestSuite(EntropyCount);
 Test(EntropyCount, test_initialized_count) {
     uint16_t cell = get_initialized_cell();
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 9));
-}
-
-Test(EntropyCount, test_recalculate_full_count) {
-    uint16_t cell = get_initialized_cell();
-    size_t initial_count = calculate_entropy_count(cell);
-    recalculate_entropy_count(&cell);
-    size_t post_count = calculate_entropy_count(cell);
-    cr_assert(eq(initial_count, 9));
-    cr_assert(eq(initial_count, post_count));
-}
-
-Test(EntropyCount, test_no_count) {
-    uint16_t cell = 0;
-    size_t count = calculate_entropy_count(cell);
-    cr_assert(eq(count, 0));
+    cr_assert(eq(ulong, count, 9));
 }
 
 Test(EntropyCount, test_get_entropy_count_full) {
     uint16_t cell = get_initialized_cell();
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 9));
+    cr_assert(eq(ulong, count, 9));
 }
 
 Test(EntropyCount, test_get_entropy_count_empty) {
     uint16_t cell = 0;
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 0));
+    cr_assert(eq(ulong, count, 0));
 }
 
 Test(EntropyCount, test_partial_entropy_count) {
     uint16_t cell = 0;
-    cell |= entropies[one] | entropies[four] | entropies[five] |
-            entropies[two] | entropies[nine];
-    recalculate_entropy_count(&cell);
-    size_t count = calculate_entropy_count(cell);
-    cr_assert(eq(count, 5), "Expected 5, got %d", count);
+    cell |= entropy_masks[one] | entropy_masks[four] | entropy_masks[five] |
+            entropy_masks[two] | entropy_masks[nine];
+    size_t count = get_entropy_count(cell);
+    cr_assert(eq(ulong, count, 5), "Expected 5, got %d", count);
     // cr_assert(eq(count, 5));
 }
 
@@ -60,10 +44,9 @@ Test(EntropyCount, test_adding_all_values_iterative) {
     enum Entropy values[9] = { one, two, three, four, five,
                                six, seven, eight, nine };
     for (size_t i = 0; i < 9; i++) {
-        cell |= entropies[values[i]];
-        recalculate_entropy_count(&cell);
+        cell |= entropy_masks[values[i]];
         count = get_entropy_count(cell);
-        cr_assert(eq(count, i + 1));
+        cr_assert(eq(ulong, count, i + 1));
     }
 }
 
@@ -73,7 +56,7 @@ Test(EntropyRemove, test_remove_value_1) {
     uint16_t cell = get_initialized_cell();
     remove_entropy_value(&cell, one);
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 8));
+    cr_assert(eq(ulong, count, 8));
     cr_assert(not(cell & entropies[one]));
 }
 
@@ -81,16 +64,16 @@ Test(EntropyRemove, test_remove_value_5) {
     uint16_t cell = get_initialized_cell();
     remove_entropy_value(&cell, five);
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 8));
-    cr_assert(not(cell & entropies[five]));
+    cr_assert(eq(ulong, count, 8));
+    cr_assert(not(cell & entropy_masks[five]));
 }
 
 Test(EntropyRemove, test_remove_value_9) {
     uint16_t cell = get_initialized_cell();
     remove_entropy_value(&cell, nine);
     size_t count = get_entropy_count(cell);
-    cr_assert(eq(count, 8));
-    cr_assert(not(cell & entropies[nine]));
+    cr_assert(eq(ulong, count, 8));
+    cr_assert(not(cell & entropy_masks[nine]));
 }
 
 Test(EntropyRemove, test_remove_all_values_iterative) {
@@ -101,7 +84,7 @@ Test(EntropyRemove, test_remove_all_values_iterative) {
     for (size_t i = 0; i < 9; i++) {
         remove_entropy_value(&cell, values[i]);
         count = get_entropy_count(cell);
-        cr_assert(eq(count, (9 - (i + 1))));
+        cr_assert(eq(ulong, count, (9 - (i + 1))));
         cr_assert(not(cell & entropies[values[i]]));
     }
 }
