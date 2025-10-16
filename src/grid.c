@@ -44,27 +44,27 @@ void grid_reset_cells(struct Grid *grid) {
     }
 }
 
-void propagate_collapse(struct Grid *grid, size_t y, size_t x,
+uint8_t propagate_collapse(struct Grid *grid, size_t y, size_t x,
                         enum Entropy entropy) {
     if (grid == NULL) {
-        return;  // I need to add more consistent error handling.
+        return UINT8_MAX - 1;  // I need to add more consistent error handling.
     }
     if (y >= 9 || x >= 9) {
-        return;
+        return UINT8_MAX - 2;
     }
 
     // Get a pointer to the row/col.
     uint16_t *row = grid->rows[y];
     uint16_t *col = grid->cols[x];
     if (row == NULL || col == NULL) {
-        return;
+        return UINT8_MAX - 3;
     }
 
     // Get a point to the middle element of the nondrant.
     size_t nondrant = ((y / 3) * 3) + (x / 3);
     uint16_t *non = grid->nons[nondrant];
     if (non == NULL || nondrant >= 9) {
-        return;
+        return UINT8_MAX - 4;
     }
 
     // Remove the entropy from each cell except the collapsed cell.
@@ -74,6 +74,9 @@ void propagate_collapse(struct Grid *grid, size_t y, size_t x,
             continue;
         }
         remove_entropy_value(row + i, entropy);
+        if (*(row + i) == entropy_masks[zero]) {
+            return 0;
+        }
     }
 
     for (i = 0; i < grid_height; i++) {
@@ -81,6 +84,9 @@ void propagate_collapse(struct Grid *grid, size_t y, size_t x,
             continue;
         }
         remove_entropy_value((col + (i * grid_width)), entropy);
+        if (*(col + (i * grid_width)) == entropy_masks[zero]) {
+            return 0;
+        }
     }
 
     // Gotta get the relative position of the collapsed cell to the center of
@@ -93,6 +99,10 @@ void propagate_collapse(struct Grid *grid, size_t y, size_t x,
                 continue;
             }
             remove_entropy_value((non + ((i * grid_width) + j)), entropy);
+            if (*(non + ((i * grid_width) + j)) == entropy_masks[zero]) {
+                return 0;
+            }
         }
     }
+    return UINT8_MAX;
 }

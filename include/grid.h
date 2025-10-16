@@ -63,9 +63,11 @@ void grid_reset_cells(struct Grid *grid);
  *  @param grid The grid in which the cell resides.
  *  @param y The row that the cell is in.
  *  @param x The column that the cell is in.
+ *  @return 0 if the collapse causes a cell to lose all entropy,
+ *          UINT8_MAX otherwise
  */
-void propagate_collapse(struct Grid *grid, size_t y, size_t x,
-                        enum Entropy entropy);
+uint8_t propagate_collapse(struct Grid *grid, size_t y, size_t x,
+                           enum Entropy entropy);
 
 
 #endif  // INCLUDE_GRID_H_
